@@ -21,7 +21,7 @@
     <style>
         body { background-color: #09090b; color: #e4e4e7; font-family: 'Inter', sans-serif; }
         .glass-panel { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(12px); border: 1px solid #27272a; }
-        .file-input-wrapper:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .dropzone-hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
         .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #18181b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
@@ -29,37 +29,59 @@
 </head>
 <body class="min-h-screen p-6 flex flex-col items-center">
 
-    <div class="w-full max-w-6xl mb-8 text-center mt-6">
+    <div class="w-full max-w-6xl mb-6 text-center mt-6">
         <h1 class="text-4xl font-bold tracking-tight text-white mb-2">PCA <span class="text-blue-500">Forensic</span> Analyzer</h1>
-        <p class="text-gray-400">Client-side inspection. Zero data leaves your browser. Designed for GitHub Pages.</p>
+        <p class="text-gray-400">Client-side inspection. Zero data leaves your browser.</p>
     </div>
 
-    <!-- Панель загрузки -->
+    <!-- Панель-помощник с путём -->
+    <div class="w-full max-w-6xl mb-6 flex justify-center">
+        <div class="bg-zinc-900 border border-zinc-800 px-6 py-3 rounded-xl flex items-center space-x-4 shadow-lg hover:border-blue-500/50 transition-colors cursor-pointer group" onclick="copyPath()" title="Click to copy">
+            <span class="text-gray-400 text-sm font-medium">Path to Logs:</span>
+            <code id="pcaPath" class="bg-black px-3 py-1 rounded text-blue-400 font-mono text-sm select-all">C:\Windows\appcompat\pca</code>
+            <button class="text-gray-500 group-hover:text-blue-400 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Тост-уведомление о копировании (Скрыт по умолчанию) -->
+    <div id="copyToast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-black px-6 py-2 rounded-full font-bold opacity-0 transition-opacity duration-300 pointer-events-none z-50">
+        Path Copied!
+    </div>
+
+    <!-- Умная зона загрузки -->
     <div class="w-full max-w-6xl glass-panel rounded-2xl p-8 mb-8 shadow-2xl">
-        <form id="uploadForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form id="uploadForm" class="flex flex-col items-center">
             
-            <div class="file-input-wrapper border-2 border-dashed border-gray-700 rounded-xl p-6 text-center transition-all cursor-pointer relative">
-                <input type="file" id="pca_gen" accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                <svg class="w-10 h-10 mx-auto text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                <p class="text-sm font-semibold text-gray-300" id="gen_label">Upload PcaGeneralDb0.txt</p>
-                <p class="text-xs text-gray-500 mt-1">Optional</p>
+            <div id="dropzone" class="w-full border-2 border-dashed border-gray-700 rounded-xl p-10 text-center transition-all cursor-pointer relative mb-6">
+                <!-- multiple позволяет выбрать сразу два файла -->
+                <input type="file" id="fileInput" multiple accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <svg class="w-12 h-12 mx-auto text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p class="text-lg font-semibold text-gray-300 mb-1">Drag & Drop PCA Logs here</p>
+                <p class="text-sm text-gray-500">or click to browse (You can drop both files at once)</p>
+                
+                <!-- Статусы файлов -->
+                <div id="fileStatusContainer" class="flex justify-center space-x-4 mt-6 h-8">
+                    <span id="statusGen" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        PcaGeneralDb0 Ready
+                    </span>
+                    <span id="statusDic" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        PcaAppLaunchDic Ready
+                    </span>
+                </div>
             </div>
 
-            <div class="file-input-wrapper border-2 border-dashed border-gray-700 rounded-xl p-6 text-center transition-all cursor-pointer relative">
-                <input type="file" id="pca_dic" accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                <svg class="w-10 h-10 mx-auto text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                <p class="text-sm font-semibold text-gray-300" id="dic_label">Upload PcaAppLaunchDic.txt</p>
-                <p class="text-xs text-gray-500 mt-1">Optional</p>
-            </div>
-
-            <div class="col-span-1 md:col-span-2 flex justify-end items-center mt-2">
-                <div class="flex items-center space-x-4 text-sm text-gray-400 mr-auto">
-                    <span class="flex items-center"><div class="w-3 h-3 bg-red-500 rounded-full mr-2 shadow-[0_0_8px_#ef4444]"></div> Cheats Detected</span>
+            <div class="w-full flex justify-between items-center">
+                <div class="flex items-center space-x-4 text-sm text-gray-400">
+                    <span class="flex items-center"><div class="w-3 h-3 bg-red-500 rounded-full mr-2 shadow-[0_0_8px_#ef4444]"></div> Cheats</span>
                     <span class="flex items-center"><div class="w-3 h-3 bg-amber-500 rounded-full mr-2 shadow-[0_0_8px_#f59e0b]"></div> High Entropy</span>
                     <span class="flex items-center"><div class="w-3 h-3 bg-zinc-600 border border-red-500 rounded-full mr-2"></div> &lt; 90 Days</span>
                 </div>
-                <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-[0_0_15px_rgba(37,99,235,0.4)] cursor-pointer z-10 relative">
-                    Analyze Vectors
+                <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-400 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-[0_0_15px_rgba(37,99,235,0.4)] disabled:shadow-none z-10" disabled>
+                    Waiting for files...
                 </button>
             </div>
         </form>
@@ -67,6 +89,10 @@
 
     <!-- Таблица результатов -->
     <div id="resultsPanel" class="w-full max-w-6xl glass-panel rounded-2xl overflow-hidden hidden shadow-2xl">
+        <div class="bg-[#1f1f22] p-4 border-b border-gray-800 flex justify-between items-center">
+            <h2 class="font-bold text-white">Analysis Results</h2>
+            <span id="statsLabel" class="text-sm text-gray-400"></span>
+        </div>
         <div class="overflow-x-auto custom-scrollbar max-h-[600px]">
             <table class="w-full text-left border-collapse">
                 <thead class="sticky top-0 bg-[#1f1f22] z-10">
@@ -78,47 +104,69 @@
                     </tr>
                 </thead>
                 <tbody id="resultsBody" class="text-sm divide-y divide-gray-800">
-                    <!-- Записи будут добавлены сюда через JS -->
+                    <!-- JS Rows -->
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // --- База читов ---
-        const CHEAT_KEYWORDS = [
-            "exloader", "com.swiftsoft", "xone", "interium", "skinchanger", "extrimhack", "nix", "memesense", 
-            "mvploader", "sharkhack", "exhack", "neverkernel", "vredux", "mason", "predator", "aquila", "luno", 
-            "fecurity", "cartel", "aimstar", "tkazer", "naim", "pellix", "pussycat", "axios", "onemacro", "softhub", 
-            "proext", "sapphire", "interwebz", "plague", "vapehook", "smurfwrecker", "iniuria", "yeahnot", "legendware", 
-            "hauntedproject", "phoenixhack", "onebyteradar", "reborn", "onebyte", "osiris", "ev0lve", "ghostware", 
-            "dexterion", "basicmultihack", "pudra", "icheat", "sneakys", "krazyhack", "muhprime", "drcheats", "rootcheat", 
-            "aeonix", "zedt.pw", "devcore", "legifard", "katebot", "imxnoobx", "w1nner", "ekknod", "neoxahack", "warware", 
-            "weave", "aimmy", "paradise", "xenon", "easysp", "en1gma", "injector", ".ahk", "macros", "bhop", "bunnyhop", 
-            "espd2x", "avira", "pphud", "primordial", "nonagon", "legit", "hvh", "aimbot", "s1mple", "semirage", "cheat", 
-            "cs2.glow", "invision", "undetek", "spurdo", "webradar", "valthrun"
-        ];
+        // --- База читов (в одной строке) ---
+        const CHEAT_STRING = "exloader|com.swiftsoft|xone|interium|skinchanger|extrimhack|nix|nixware|memesense|mvploader|sharkhack|exhack|neverkernel|vredux|mason|predator|aquila|luno|fecurity|cartel|aimstar|tkazer|naim|pellix|pussycat|axios|onemacro|softhub|proext|sapphire|interwebz|plague|vapehook|smurfwrecker|iniuria|yeahnot|legendware|hauntedproject|phoenixhack|onebyteradar|reborn|onebyte|osiris|ev0lve|ghostware|dexterion|basicmultihack|pudra|icheat|sneakys|krazyhack|muhprime|drcheats|rootcheat|aeonix|zedt.pw|devcore|legifard|katebot|imxnoobx|w1nner|ekknod|neoxahack|warware|weave|aimmy|paradise|xenon|easysp|en1gma|injector|.ahk|macros|bhop|bunnyhop|espd2x|avira|pphud|primordial|nonagon|legit|hvh|aimbot|s1mple|semirage|cheat|cs2.glow|invision|undetek|spurdo|webradar|valthrun|skeet|gamesense|fatality|onetap|neverlose|aimware|pandora|millionware|zapped|spirthack|midnight|eternity|weebware|otcv2|otcv3|otcv4|ezfrags|projectinfinity|klorik|rawetrip|airhook|clarity|novoline|fuzion|mutiny|rifk7|nemesis|zeus|vanity|redtrust|pcileech|dma_bypass|faceit_bypass|vanguard_bypass|kernel_cheat|loader.exe|ec-cs2|fantasy.cat|fantasycat|nightfall|anyx|anyx.gg|visioncloud|distort|distort.wtf|compkiller|kernaim|insanitycheats|yuisemi|incident|star.cs2|quint|word.exe|zelesis|uwuware|lootline|essentials|neverloose|nl|gs|aw|ot|dma|kmbox|fuser|radarhack|wallhack|esp|triggerbot|aimassist|rcs|chams|glowesp|x-ray|deflect|ratpoison|charlatano|penguin|aimtux|otc|supremacy|indigo|gladiatorcheatz|ayyware|stickrpg|getze.us|freeqn|bighack|victoria|forsaken|kqly|hook|bypass|dumper|offset|memory|lumihook|weave.su|luckycharms|dopamine|aimstep|paste|pasting|ezcheats|unknowncheats|mpgh|csgohacks|guidedhacking|ezfrag";
+        const CHEAT_KEYWORDS = CHEAT_STRING.split('|');
 
-        // Обновление интерфейса при выборе файлов
-        document.getElementById('pca_gen').addEventListener('change', e => {
-            const f = e.target.files[0];
-            const label = document.getElementById('gen_label');
-            label.innerText = f ? f.name : 'Upload PcaGeneralDb0.txt';
-            f ? label.classList.add('text-blue-400') : label.classList.remove('text-blue-400');
-        });
-        document.getElementById('pca_dic').addEventListener('change', e => {
-            const f = e.target.files[0];
-            const label = document.getElementById('dic_label');
-            label.innerText = f ? f.name : 'Upload PcaAppLaunchDic.txt';
-            f ? label.classList.add('text-blue-400') : label.classList.remove('text-blue-400');
-        });
+        // Глобальные переменные для хранения файлов
+        let fileGeneral = null;
+        let fileDic = null;
 
-        // Расчет Энтропии Шеннона (JavaScript версия)
+        // Копирование пути
+        function copyPath() {
+            navigator.clipboard.writeText("C:\\Windows\\appcompat\\pca");
+            const toast = document.getElementById('copyToast');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 2000);
+        }
+
+        // Автоопределение файлов по именам
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusGen = document.getElementById('statusGen');
+        const statusDic = document.getElementById('statusDic');
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        // Визуальные эффекты при перетаскивании
+        fileInput.addEventListener('dragenter', () => dropzone.classList.add('dropzone-hover'));
+        fileInput.addEventListener('dragleave', () => dropzone.classList.remove('dropzone-hover'));
+        fileInput.addEventListener('drop', () => dropzone.classList.remove('dropzone-hover'));
+
+        function handleFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                const name = files[i].name.toLowerCase();
+                if (name.includes('general')) {
+                    fileGeneral = files[i];
+                    statusGen.classList.remove('hidden');
+                    statusGen.classList.add('flex');
+                } else if (name.includes('dic')) {
+                    fileDic = files[i];
+                    statusDic.classList.remove('hidden');
+                    statusDic.classList.add('flex');
+                }
+            }
+            
+            // Если загружен хотя бы один файл, разблокируем кнопку
+            if (fileGeneral || fileDic) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Analyze Vectors';
+            }
+        }
+
+        // Расчет Энтропии Шеннона
         function calculateEntropy(filename) {
             if (!filename) return 0.0;
-            // Убираем расширение (.exe, .dll) для более точного анализа
             const baseName = filename.substring(0, filename.lastIndexOf('.')) || filename;
-            if (baseName.length < 5) return 0.0; // Игнорируем короткие имена
+            if (baseName.length < 5) return 0.0; 
 
             const counts = {};
             for (let i = 0; i < baseName.length; i++) {
@@ -134,16 +182,14 @@
             return entropy;
         }
 
-        // Умное чтение файла с распознаванием кодировки (UTF-16LE для логов Win)
+        // Умное чтение файла (UTF-16LE / UTF-8)
         async function readLogFile(file) {
             const buffer = await file.arrayBuffer();
             const bytes = new Uint8Array(buffer);
-            
-            // Пытаемся найти UTF-16LE маркеры или нулевые байты
             let isUTF16 = false;
-            if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
-                isUTF16 = true;
-            } else {
+            
+            if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) isUTF16 = true;
+            else {
                 for (let i = 0; i < Math.min(bytes.length, 200); i++) {
                     if (bytes[i] === 0) { isUTF16 = true; break; }
                 }
@@ -157,7 +203,7 @@
         // Парсинг одной строки
         function processLine(line, isDic) {
             const limitDate = new Date();
-            limitDate.setDate(limitDate.getDate() - 90); // -90 дней
+            limitDate.setDate(limitDate.getDate() - 90); 
             
             let dateStr = "";
             let filePath = "";
@@ -180,7 +226,7 @@
 
             if (!filePath) return null;
 
-            const name = filePath.split('\\').pop().split('/').pop(); // os.path.basename
+            const name = filePath.split('\\').pop().split('/').pop(); 
             
             let isRecent = false;
             if (dateStr) {
@@ -208,26 +254,25 @@
         // Основной обработчик
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.innerText = 'Scanning...';
-            btn.classList.add('animate-pulse');
+            if (!fileGeneral && !fileDic) return;
+
+            submitBtn.innerText = 'Scanning...';
+            submitBtn.classList.add('animate-pulse');
+            submitBtn.disabled = true;
 
             try {
-                const genFile = document.getElementById('pca_gen').files[0];
-                const dicFile = document.getElementById('pca_dic').files[0];
-                
                 let allResults = [];
 
-                if (genFile) {
-                    const lines = await readLogFile(genFile);
+                if (fileGeneral) {
+                    const lines = await readLogFile(fileGeneral);
                     lines.forEach(line => {
                         const parsed = processLine(line, false);
                         if (parsed) allResults.push(parsed);
                     });
                 }
 
-                if (dicFile) {
-                    const lines = await readLogFile(dicFile);
+                if (fileDic) {
+                    const lines = await readLogFile(fileDic);
                     lines.forEach(line => {
                         const parsed = processLine(line, true);
                         if (parsed) allResults.push(parsed);
@@ -235,34 +280,38 @@
                 }
 
                 if (allResults.length === 0) {
-                    alert("No data found or no files selected.");
+                    alert("No data found in selected files.");
                     return;
                 }
 
-                // Удаляем дубликаты по пути (Full Path)
+                // Удаляем дубликаты
                 const uniqueMap = new Map();
                 allResults.forEach(item => uniqueMap.set(item.path, item));
                 let uniqueResults = Array.from(uniqueMap.values());
 
-                // Сортировка: Сначала Читы -> Потом Подозрительные -> Потом Свежие (< 90д)
+                // Статистика
+                let cheatCount = 0;
+                let suspiciousCount = 0;
+
+                // Сортировка
                 uniqueResults.sort((a, b) => {
                     if (a.found_cheats.length > 0 && b.found_cheats.length === 0) return -1;
                     if (a.found_cheats.length === 0 && b.found_cheats.length > 0) return 1;
-                    
                     if (a.is_suspicious && !b.is_suspicious) return -1;
                     if (!a.is_suspicious && b.is_suspicious) return 1;
-                    
                     if (a.is_recent && !b.is_recent) return -1;
                     if (!a.is_recent && b.is_recent) return 1;
-                    
                     return 0;
                 });
 
-                // Рендер таблицы
+                // Рендер
                 const tbody = document.getElementById('resultsBody');
                 tbody.innerHTML = '';
 
                 uniqueResults.forEach(item => {
+                    if (item.found_cheats.length > 0) cheatCount++;
+                    if (item.is_suspicious) suspiciousCount++;
+
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-[#202024] transition-colors';
                     
@@ -290,14 +339,16 @@
                     tbody.appendChild(tr);
                 });
 
+                document.getElementById('statsLabel').innerText = `Total scanned: ${uniqueResults.length} | Cheats: ${cheatCount} | Suspicious: ${suspiciousCount}`;
                 document.getElementById('resultsPanel').classList.remove('hidden');
 
             } catch (err) {
                 console.error(err);
                 alert('Error analyzing files. Make sure they are valid Windows PCA Logs.');
             } finally {
-                btn.innerText = 'Analyze Vectors';
-                btn.classList.remove('animate-pulse');
+                submitBtn.innerText = 'Analyze Vectors';
+                submitBtn.classList.remove('animate-pulse');
+                submitBtn.disabled = false;
             }
         });
     </script>
