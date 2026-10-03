@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PCA Forensic Shield v2.0</title>
+    <title>Ultimate Forensic Shield (PCA + Amcache)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -30,55 +30,65 @@
 <body class="min-h-screen p-6 flex flex-col items-center">
 
     <div class="w-full max-w-6xl mb-6 text-center mt-4">
-        <h1 class="text-4xl font-extrabold tracking-tight text-white mb-2">PCA <span class="text-blue-500">Forensic</span> Analyzer</h1>
-        <p class="text-gray-400 text-sm">Низкий уровень FP, скоринг риска и мониторинг запусков за 24ч</p>
+        <h1 class="text-4xl font-extrabold tracking-tight text-white mb-2">Forensic <span class="text-blue-500">Shield</span> PRO</h1>
+        <p class="text-gray-400 text-sm">Анализ PCA Logs + Бинарный парсер куста реестра <span class="text-amber-400 font-mono">Amcache.hve</span></p>
     </div>
 
-    <!-- Путь к логам -->
-    <div class="w-full max-w-6xl mb-6 flex justify-center">
-        <div class="bg-zinc-900 border border-zinc-800 px-6 py-2.5 rounded-xl flex items-center space-x-4 shadow-lg hover:border-blue-500/50 transition-colors cursor-pointer group" onclick="copyPath()" title="Нажмите для копирования">
-            <span class="text-gray-400 text-sm font-medium">Путь к логам:</span>
-            <code id="pcaPath" class="bg-black px-3 py-1 rounded text-blue-400 font-mono text-xs select-all">C:\Windows\appcompat\pca</code>
-            <button class="text-gray-500 group-hover:text-blue-400 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-            </button>
+    <!-- Инфо-панель для копирования команд -->
+    <div class="w-full max-w-6xl mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex items-center justify-between shadow-lg cursor-pointer hover:border-blue-500/50 transition-colors" onclick="copyText('C:\\Windows\\appcompat\\pca', 'Путь к PCA скопирован')">
+            <div>
+                <span class="text-gray-400 text-xs block font-medium">Папка PCA логов:</span>
+                <code class="text-blue-400 font-mono text-xs">C:\Windows\appcompat\pca</code>
+                <span class="text-gray-400 text-xs block font-medium">Команда на случай ошибки:</span>
+                <code class="text-blue-400 font-mono text-xs">Copy-Item -Path "C:\Windows\appcompat\Programs\Amcache.hve" -Destination "$env:USERPROFILE\Desktop\Amcache.hve"</code>
+            </div>
+            <span class="text-xs bg-zinc-800 text-gray-300 px-2 py-1 rounded">Копировать</span>
+        </div>
+        <div class="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex items-center justify-between shadow-lg cursor-pointer hover:border-amber-500/50 transition-colors" onclick="copyText('Copy-Item -Path C:\\Windows\\appcompat\\Programs\\Amcache.hve -Destination $env:USERPROFILE\\Desktop\\Amcache.hve', 'PowerShell команда скопирована!')">
+            <div>
+                <span class="text-gray-400 text-xs block font-medium">Команда копирования Amcache на рабочий стол (PowerShell):</span>
+                <code class="text-amber-400 font-mono text-xs">Copy-Item Amcache.hve -> Desktop</code>
+            </div>
+            <span class="text-xs bg-zinc-800 text-gray-300 px-2 py-1 rounded">Копировать команду</span>
         </div>
     </div>
     
     <div id="copyToast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-black px-5 py-1.5 rounded-full font-bold opacity-0 transition-opacity duration-300 pointer-events-none z-50 text-sm shadow-xl">
-        Путь скопирован!
+        Скопировано!
     </div>
 
-    <!-- Загрузчик -->
+    <!-- Зона загрузки -->
     <div class="w-full max-w-6xl glass-panel rounded-2xl p-6 mb-8 shadow-2xl">
         <form id="uploadForm" class="flex flex-col items-center">
             <div id="dropzone" class="w-full border-2 border-dashed border-gray-700 rounded-xl p-8 text-center transition-all cursor-pointer relative mb-4">
-                <input type="file" id="fileInput" multiple accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <input type="file" id="fileInput" multiple accept=".txt,.hve" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                 <svg class="w-10 h-10 mx-auto text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                <p class="text-md font-semibold text-gray-300">Перетащите файлы PcaGeneralDb0.txt или PcaAppLaunchDic.txt</p>
-                <p class="text-xs text-gray-500 mt-1">Поддерживается одновременный выбор двух файлов</p>
+                <p class="text-md font-semibold text-gray-300">Перетащите сюда логи PCA (.txt) и/или Amcache.hve</p>
+                <p class="text-xs text-gray-500 mt-1">Все обрабатывается в браузере локально без отправки в сеть</p>
                 
-                <div id="fileStatusContainer" class="flex justify-center space-x-3 mt-4 h-6">
-                    <span id="statusGen" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-0.5 rounded-full text-xs font-medium">PcaGeneralDb0 готов</span>
-                    <span id="statusDic" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-0.5 rounded-full text-xs font-medium">PcaAppLaunchDic готов</span>
+                <!-- Статусы файлов -->
+                <div id="fileStatusContainer" class="flex flex-wrap justify-center gap-2 mt-4">
+                    <span id="statusGen" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-0.5 rounded-full text-xs font-medium">PcaGeneralDb0 OK</span>
+                    <span id="statusDic" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-0.5 rounded-full text-xs font-medium">PcaAppLaunchDic OK</span>
+                    <span id="statusAmcache" class="hidden items-center bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3 py-0.5 rounded-full text-xs font-medium">Amcache.hve OK</span>
                 </div>
             </div>
 
             <div class="w-full flex justify-end">
                 <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg text-sm" disabled>
-                    Ожидание файлов...
+                    Загрузите файлы для сканирования
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Панель с вкладками и таблицей -->
+    <!-- Результаты -->
     <div id="resultsPanel" class="w-full max-w-6xl glass-panel rounded-2xl overflow-hidden hidden shadow-2xl">
-        <!-- Навигация по вкладкам -->
         <div class="bg-[#1f1f22] p-4 border-b border-gray-800 flex flex-wrap justify-between items-center gap-4">
             <div class="flex space-x-2 bg-black/40 p-1 rounded-xl border border-zinc-800">
                 <button onclick="switchTab('threats')" id="tabThreats" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow">
-                    Угрозы и подозрительные (<span id="threatsCount">0</span>)
+                    Угрозы (<span id="threatsCount">0</span>)
                 </button>
                 <button onclick="switchTab('recent')" id="tabRecent" class="px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">
                     За последние 24 часа (<span id="recentCount">0</span>)
@@ -94,22 +104,20 @@
             <table class="w-full text-left border-collapse">
                 <thead class="sticky top-0 bg-[#19191c] z-10">
                     <tr class="border-b border-gray-800 text-[11px] uppercase tracking-wider text-gray-400">
-                        <th class="p-3.5 font-semibold w-40">Дата и время</th>
+                        <th class="p-3.5 font-semibold w-36">Источник / Дата</th>
                         <th class="p-3.5 font-semibold w-24">Риск</th>
                         <th class="p-3.5 font-semibold w-1/4">Имя файла</th>
-                        <th class="p-3.5 font-semibold">Полный путь</th>
+                        <th class="p-3.5 font-semibold">Хеш SHA-1 / Полный путь</th>
                         <th class="p-3.5 font-semibold w-48 text-right">Факторы</th>
                     </tr>
                 </thead>
                 <tbody id="resultsBody" class="text-xs divide-y divide-gray-800/60 font-mono">
-                    <!-- Заполняется JS -->
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // --- 1. ТОЧНЫЙ СПИСОК ЧИТОВ (Только явные маркеры без ложных срабатываний) ---
         const CHEAT_KEYWORDS = [
             "exloader", "xone", "interium", "skinchanger", "extrimhack", "nixware", "memesense", 
             "mvploader", "sharkhack", "neverkernel", "vredux", "fecurity", "aimstar", "tkazer", 
@@ -119,15 +127,10 @@
             "pcileech", "kmbox", "wallhack", "triggerbot", "aimassist", "glowesp", "freeqn", "dopamine"
         ];
 
-        // --- 2. БЕЛЫЙ СПИСОК (Исключает ложные срабатывания) ---
         const WHITELIST_DIRS = [
-            "c:\\windows\\system32",
-            "c:\\windows\\syswow64",
-            "c:\\windows\\microsoft.net",
-            "c:\\program files\\steam",
-            "c:\\program files (x86)\\steam",
-            "c:\\program files\\epic games",
-            "c:\\program files\\riot vanguard"
+            "c:\\windows\\system32", "c:\\windows\\syswow64", "c:\\windows\\microsoft.net",
+            "c:\\program files\\steam", "c:\\program files (x86)\\steam",
+            "c:\\program files\\epic games", "c:\\program files\\riot vanguard"
         ];
 
         const WHITELIST_EXES = [
@@ -138,55 +141,45 @@
 
         let parsedItems = [];
         let currentTab = 'threats';
-        let fileGeneral = null;
-        let fileDic = null;
+        let fileGeneral = null, fileDic = null, fileAmcache = null;
 
-        function copyPath() {
-            navigator.clipboard.writeText("C:\\Windows\\appcompat\\pca");
+        function copyText(text, msg) {
+            navigator.clipboard.writeText(text);
             const toast = document.getElementById('copyToast');
+            toast.innerText = msg;
             toast.classList.remove('opacity-0');
-            setTimeout(() => toast.classList.add('opacity-0'), 2000);
+            setTimeout(() => toast.classList.add('opacity-0'), 2500);
         }
 
         const fileInput = document.getElementById('fileInput');
-        const dropzone = document.getElementById('dropzone');
-        const submitBtn = document.getElementById('submitBtn');
-        const statusGen = document.getElementById('statusGen');
-        const statusDic = document.getElementById('statusDic');
-
-        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-        fileInput.addEventListener('dragenter', () => dropzone.classList.add('dropzone-hover'));
-        fileInput.addEventListener('dragleave', () => dropzone.classList.remove('dropzone-hover'));
-        fileInput.addEventListener('drop', () => dropzone.classList.remove('dropzone-hover'));
-
-        function handleFiles(files) {
-            for (let i = 0; i < files.length; i++) {
-                const name = files[i].name.toLowerCase();
+        fileInput.addEventListener('change', (e) => {
+            for (let file of e.target.files) {
+                const name = file.name.toLowerCase();
                 if (name.includes('general')) {
-                    fileGeneral = files[i];
-                    statusGen.classList.remove('hidden');
-                    statusGen.classList.add('flex');
+                    fileGeneral = file;
+                    document.getElementById('statusGen').classList.remove('hidden');
+                    document.getElementById('statusGen').classList.add('flex');
                 } else if (name.includes('dic')) {
-                    fileDic = files[i];
-                    statusDic.classList.remove('hidden');
-                    statusDic.classList.add('flex');
+                    fileDic = file;
+                    document.getElementById('statusDic').classList.remove('hidden');
+                    document.getElementById('statusDic').classList.add('flex');
+                } else if (name.includes('amcache')) {
+                    fileAmcache = file;
+                    document.getElementById('statusAmcache').classList.remove('hidden');
+                    document.getElementById('statusAmcache').classList.add('flex');
                 }
             }
-            if (fileGeneral || fileDic) {
-                submitBtn.disabled = false;
-                submitBtn.innerText = 'Анализировать логи';
+            if (fileGeneral || fileDic || fileAmcache) {
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').innerText = 'Анализировать артефакты';
             }
-        }
+        });
 
-        // Расчет энтропии (только для нестандартных имен > 6 символов, не UUID)
         function calculateEntropy(filename) {
             const baseName = filename.substring(0, filename.lastIndexOf('.')) || filename;
-            // Игнорируем GUID формата {XXXXXXXX-XXXX-...}
             if (baseName.length < 6 || /^[0-9a-fA-F-]{32,}$/.test(baseName)) return 0;
-
             const counts = {};
             for (let char of baseName) counts[char] = (counts[char] || 0) + 1;
-
             let entropy = 0;
             for (let char in counts) {
                 const p = counts[char] / baseName.length;
@@ -195,7 +188,95 @@
             return entropy;
         }
 
-        async function readLogFile(file) {
+        function evaluateRisk(filePath, fileName, entropy) {
+            const lowerPath = filePath.toLowerCase();
+            const lowerName = fileName.toLowerCase();
+
+            if (WHITELIST_EXES.includes(lowerName)) return { score: 0, factors: [] };
+            for (let dir of WHITELIST_DIRS) {
+                if (lowerPath.startsWith(dir)) return { score: 0, factors: [] };
+            }
+
+            let score = 0;
+            let factors = [];
+
+            for (let cheat of CHEAT_KEYWORDS) {
+                const reg = new RegExp(`(^|[ _.-])${cheat}([ _.-]|$)`, 'i');
+                if (reg.test(lowerName) || lowerPath.includes('\\' + cheat)) {
+                    score += 85;
+                    factors.push(`Сигнатура чита: ${cheat}`);
+                    break;
+                }
+            }
+
+            if (lowerPath.includes('\\appdata\\local\\temp')) {
+                score += 25;
+                factors.push('Папка Temp');
+            } else if (lowerPath.includes('\\downloads\\')) {
+                score += 15;
+                factors.push('Папка Downloads');
+            }
+
+            if (entropy > 3.85) {
+                score += 35;
+                factors.push(`Высокая энтропия (${entropy.toFixed(2)})`);
+            }
+
+            return { score: Math.min(100, score), factors: factors };
+        }
+
+        // --- БИНАРНЫЙ ПАРСЕР / КАРВЕР ДЛЯ AMCACHE.HVE ---
+        async function parseAmcacheHive(file) {
+            const buffer = await file.arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+            const results = [];
+
+            // Декодируем UTF-16LE строки для поиска путей программ
+            const textDecoder = new TextDecoder('utf-16le');
+            const rawString = textDecoder.decode(buffer);
+
+            // Ищем пути к исполняемым файлам (.exe / .dll)
+            const pathRegex = /([a-zA-Z]:\\[^"<>|\x00-\x1F\uD800-\uDFFF]+\.(?:exe|dll))/gi;
+            // Ищем хеши SHA-1 (0000 + 40 символов SHA1 или чистый 40-символьный hex)
+            const sha1Regex = /\b[a-fA-F0-9]{40}\b/g;
+
+            let match;
+            const foundPaths = new Set();
+
+            while ((match = pathRegex.exec(rawString)) !== null) {
+                const p = match[1];
+                if (!foundPaths.has(p.toLowerCase())) {
+                    foundPaths.add(p.toLowerCase());
+
+                    const name = p.split('\\').pop();
+                    const entropy = calculateEntropy(name);
+                    const risk = evaluateRisk(p, name, entropy);
+
+                    // Пробуем зацепить SHA1 хеш, находящийся рядом в кусте реестра
+                    let nearbyHash = "";
+                    const searchWindow = rawString.substring(Math.max(0, match.index - 500), Math.min(rawString.length, match.index + 500));
+                    const hashMatch = searchWindow.match(sha1Regex);
+                    if (hashMatch) {
+                        nearbyHash = hashMatch[0];
+                    }
+
+                    results.push({
+                        source: 'Amcache',
+                        timestamp: 0,
+                        dateDisplay: 'В базе Amcache',
+                        name: name,
+                        path: p,
+                        sha1: nearbyHash,
+                        is24h: false,
+                        riskScore: risk.score,
+                        factors: risk.factors
+                    });
+                }
+            }
+            return results;
+        }
+
+        async function readPcaText(file) {
             const buffer = await file.arrayBuffer();
             const bytes = new Uint8Array(buffer);
             let isUTF16 = (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE);
@@ -208,52 +289,7 @@
             return decoder.decode(buffer).split(/\r?\n/).filter(line => line.trim().length > 0);
         }
 
-        // Расчет риска (0 - 100%)
-        function evaluateRisk(filePath, fileName, entropy) {
-            const lowerPath = filePath.toLowerCase();
-            const lowerName = fileName.toLowerCase();
-
-            // 1. Проверка белого списка
-            if (WHITELIST_EXES.includes(lowerName)) return { score: 0, factors: [] };
-            for (let dir of WHITELIST_DIRS) {
-                if (lowerPath.startsWith(dir)) return { score: 0, factors: [] };
-            }
-
-            let score = 0;
-            let factors = [];
-
-            // 2. Сигнатуры читов (Самый большой вес)
-            for (let cheat of CHEAT_KEYWORDS) {
-                const reg = new RegExp(`(^|[ _.-])${cheat}([ _.-]|$)`, 'i');
-                if (reg.test(lowerName) || lowerPath.includes('\\' + cheat)) {
-                    score += 85;
-                    factors.push(`Чит: ${cheat}`);
-                    break;
-                }
-            }
-
-            // 3. Запуск из опасных папок
-            if (lowerPath.includes('\\appdata\\local\\temp')) {
-                score += 25;
-                factors.push('Запуск из Temp');
-            } else if (lowerPath.includes('\\downloads\\')) {
-                score += 10;
-                factors.push('Папка Downloads');
-            }
-
-            // 4. Подозрительная энтропия (рандомизированное имя)
-            if (entropy > 3.85) {
-                score += 35;
-                factors.push(`Высокая энтропия (${entropy.toFixed(2)})`);
-            }
-
-            return {
-                score: Math.min(100, score),
-                factors: factors
-            };
-        }
-
-        function parseLine(line, isDic) {
+        function parsePcaLine(line, isDic) {
             let fullDate = null;
             let dateStr = "Неизвестно";
             let filePath = "";
@@ -287,15 +323,16 @@
             const entropy = calculateEntropy(fileName);
             const risk = evaluateRisk(filePath, fileName, entropy);
 
-            // Проверка за последние 24 часа
             const now = new Date();
             const is24h = fullDate ? ((now - fullDate) <= 24 * 60 * 60 * 1000 && (now - fullDate) >= 0) : false;
 
             return {
+                source: 'PCA Log',
                 timestamp: fullDate ? fullDate.getTime() : 0,
                 dateDisplay: dateStr,
                 name: fileName,
                 path: filePath,
+                sha1: "",
                 is24h: is24h,
                 riskScore: risk.score,
                 factors: risk.factors
@@ -304,39 +341,48 @@
 
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            submitBtn.innerText = 'Анализ...';
-            submitBtn.disabled = true;
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = 'Анализ реестра и логов...';
+            btn.disabled = true;
 
             try {
                 let records = [];
+
                 if (fileGeneral) {
-                    const lines = await readLogFile(fileGeneral);
-                    lines.forEach(l => { const r = parseLine(l, false); if (r) records.push(r); });
+                    const lines = await readPcaText(fileGeneral);
+                    lines.forEach(l => { const r = parsePcaLine(l, false); if (r) records.push(r); });
                 }
                 if (fileDic) {
-                    const lines = await readLogFile(fileDic);
-                    lines.forEach(l => { const r = parseLine(l, true); if (r) records.push(r); });
+                    const lines = await readPcaText(fileDic);
+                    lines.forEach(l => { const r = parsePcaLine(l, true); if (r) records.push(r); });
+                }
+                if (fileAmcache) {
+                    const amcacheItems = await parseAmcacheHive(fileAmcache);
+                    records = records.concat(amcacheItems);
                 }
 
-                // Дедупликация (оставляем самый свежий запуск для каждого пути)
+                // Объединение дубликатов с сохранением данных SHA-1 и дат
                 const map = new Map();
                 records.forEach(r => {
-                    if (!map.has(r.path) || map.get(r.path).timestamp < r.timestamp) {
-                        map.set(r.path, r);
+                    const key = r.path.toLowerCase();
+                    if (!map.has(key)) {
+                        map.set(key, r);
+                    } else {
+                        const existing = map.get(key);
+                        if (!existing.sha1 && r.sha1) existing.sha1 = r.sha1;
+                        if (r.timestamp > existing.timestamp) {
+                            existing.timestamp = r.timestamp;
+                            existing.dateDisplay = r.dateDisplay;
+                            existing.is24h = r.is24h;
+                        }
                     }
                 });
 
                 parsedItems = Array.from(map.values());
-
-                // Сортировка: Сначала свежие и с высоким риском
                 parsedItems.sort((a, b) => b.riskScore - a.riskScore || b.timestamp - a.timestamp);
 
-                // Подсчет счетчиков
-                const threatCount = parsedItems.filter(i => i.riskScore >= 40).length;
-                const recentCount = parsedItems.filter(i => i.is24h).length;
-
-                document.getElementById('threatsCount').innerText = threatCount;
-                document.getElementById('recentCount').innerText = recentCount;
+                document.getElementById('threatsCount').innerText = parsedItems.filter(i => i.riskScore >= 35).length;
+                document.getElementById('recentCount').innerText = parsedItems.filter(i => i.is24h).length;
                 document.getElementById('totalCount').innerText = parsedItems.length;
 
                 document.getElementById('resultsPanel').classList.remove('hidden');
@@ -344,18 +390,17 @@
 
             } catch (err) {
                 console.error(err);
-                alert("Ошибка чтения логов PCA!");
+                alert("Ошибка при разборе файлов!");
             } finally {
-                submitBtn.innerText = 'Анализ завершен';
-                submitBtn.disabled = false;
+                btn.innerText = 'Сканирование завершено';
+                btn.disabled = false;
             }
         });
 
         function switchTab(tab) {
             currentTab = tab;
             ['tabThreats', 'tabRecent', 'tabAll'].forEach(id => {
-                const btn = document.getElementById(id);
-                btn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all';
+                document.getElementById(id).className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all';
             });
 
             if (tab === 'threats') document.getElementById('tabThreats').className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow';
@@ -379,13 +424,12 @@
                 filtered = parsedItems;
             }
 
-            document.getElementById('statsLabel').innerText = `Показано записей: ${filtered.length}`;
+            document.getElementById('statsLabel').innerText = `Показано: ${filtered.length}`;
 
             filtered.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-zinc-800/40 transition-colors';
 
-                // Цветовая шкала риска
                 let riskBadge = '';
                 if (item.riskScore >= 70) {
                     riskBadge = `<span class="bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded font-bold">${item.riskScore}%</span>`;
@@ -395,15 +439,24 @@
                     riskBadge = `<span class="bg-zinc-800 text-gray-400 px-2 py-0.5 rounded">${item.riskScore}%</span>`;
                 }
 
+                let srcBadge = item.source === 'Amcache' 
+                    ? '<span class="text-[10px] text-amber-400 bg-amber-950/40 border border-amber-800/50 px-1 rounded mr-1">Amcache</span>' 
+                    : '<span class="text-[10px] text-blue-400 bg-blue-950/40 border border-blue-800/50 px-1 rounded mr-1">PCA</span>';
+
                 let factorsHtml = item.factors.map(f => 
                     `<span class="inline-block bg-zinc-800 text-zinc-300 border border-zinc-700 px-1.5 py-0.5 rounded text-[10px] ml-1">${f}</span>`
                 ).join('');
 
+                let shaDisplay = item.sha1 ? `<div class="text-[10px] text-yellow-500/80 font-mono mt-0.5 select-all">SHA-1: ${item.sha1}</div>` : '';
+
                 tr.innerHTML = `
-                    <td class="p-3.5 whitespace-nowrap text-gray-400">${item.dateDisplay}</td>
+                    <td class="p-3.5 whitespace-nowrap text-gray-400">${srcBadge}${item.dateDisplay}</td>
                     <td class="p-3.5 whitespace-nowrap">${riskBadge}</td>
                     <td class="p-3.5 text-gray-200 font-bold break-all">${item.name}</td>
-                    <td class="p-3.5 text-gray-500 text-[11px] break-all max-w-md">${item.path}</td>
+                    <td class="p-3.5 text-gray-500 text-[11px] break-all max-w-md">
+                        <div>${item.path}</div>
+                        ${shaDisplay}
+                    </td>
                     <td class="p-3.5 text-right whitespace-nowrap">${factorsHtml || '<span class="text-zinc-600">-</span>'}</td>
                 `;
                 tbody.appendChild(tr);
