@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zero-Day Forensic Shield</title>
+    <title>PCA Forensic Shield v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,7 +20,7 @@
     </script>
     <style>
         body { background-color: #09090b; color: #e4e4e7; font-family: 'Inter', sans-serif; }
-        .glass-panel { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(12px); border: 1px solid #27272a; }
+        .glass-panel { background: rgba(24, 24, 27, 0.75); backdrop-filter: blur(12px); border: 1px solid #27272a; }
         .dropzone-hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
         .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #18181b; }
@@ -29,97 +29,118 @@
 </head>
 <body class="min-h-screen p-6 flex flex-col items-center">
 
-    <div class="w-full max-w-6xl mb-6 text-center mt-6">
-        <h1 class="text-4xl font-bold tracking-tight text-white mb-2">PCA <span class="text-blue-500">Forensic</span> Analyzer</h1>
-        <p class="text-gray-400">Client-side inspection. Zero data leaves your browser.</p>
+    <div class="w-full max-w-6xl mb-6 text-center mt-4">
+        <h1 class="text-4xl font-extrabold tracking-tight text-white mb-2">PCA <span class="text-blue-500">Forensic</span> Analyzer</h1>
+        <p class="text-gray-400 text-sm">Низкий уровень FP, скоринг риска и мониторинг запусков за 24ч</p>
     </div>
 
-    <!-- Панель-помощник с путём -->
+    <!-- Путь к логам -->
     <div class="w-full max-w-6xl mb-6 flex justify-center">
-        <div class="bg-zinc-900 border border-zinc-800 px-6 py-3 rounded-xl flex items-center space-x-4 shadow-lg hover:border-blue-500/50 transition-colors cursor-pointer group" onclick="copyPath()" title="Click to copy">
-            <span class="text-gray-400 text-sm font-medium">Path to Logs:</span>
-            <code id="pcaPath" class="bg-black px-3 py-1 rounded text-blue-400 font-mono text-sm select-all">C:\Windows\appcompat\pca</code>
+        <div class="bg-zinc-900 border border-zinc-800 px-6 py-2.5 rounded-xl flex items-center space-x-4 shadow-lg hover:border-blue-500/50 transition-colors cursor-pointer group" onclick="copyPath()" title="Нажмите для копирования">
+            <span class="text-gray-400 text-sm font-medium">Путь к логам:</span>
+            <code id="pcaPath" class="bg-black px-3 py-1 rounded text-blue-400 font-mono text-xs select-all">C:\Windows\appcompat\pca</code>
             <button class="text-gray-500 group-hover:text-blue-400 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
             </button>
         </div>
     </div>
     
-    <!-- Тост-уведомление о копировании (Скрыт по умолчанию) -->
-    <div id="copyToast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-black px-6 py-2 rounded-full font-bold opacity-0 transition-opacity duration-300 pointer-events-none z-50">
-        Path Copied!
+    <div id="copyToast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-black px-5 py-1.5 rounded-full font-bold opacity-0 transition-opacity duration-300 pointer-events-none z-50 text-sm shadow-xl">
+        Путь скопирован!
     </div>
 
-    <!-- Умная зона загрузки -->
-    <div class="w-full max-w-6xl glass-panel rounded-2xl p-8 mb-8 shadow-2xl">
+    <!-- Загрузчик -->
+    <div class="w-full max-w-6xl glass-panel rounded-2xl p-6 mb-8 shadow-2xl">
         <form id="uploadForm" class="flex flex-col items-center">
-            
-            <div id="dropzone" class="w-full border-2 border-dashed border-gray-700 rounded-xl p-10 text-center transition-all cursor-pointer relative mb-6">
-                <!-- multiple позволяет выбрать сразу два файла -->
+            <div id="dropzone" class="w-full border-2 border-dashed border-gray-700 rounded-xl p-8 text-center transition-all cursor-pointer relative mb-4">
                 <input type="file" id="fileInput" multiple accept=".txt" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                <svg class="w-12 h-12 mx-auto text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                <p class="text-lg font-semibold text-gray-300 mb-1">Drag & Drop PCA Logs here</p>
-                <p class="text-sm text-gray-500">or click to browse (You can drop both files at once)</p>
+                <svg class="w-10 h-10 mx-auto text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p class="text-md font-semibold text-gray-300">Перетащите файлы PcaGeneralDb0.txt или PcaAppLaunchDic.txt</p>
+                <p class="text-xs text-gray-500 mt-1">Поддерживается одновременный выбор двух файлов</p>
                 
-                <!-- Статусы файлов -->
-                <div id="fileStatusContainer" class="flex justify-center space-x-4 mt-6 h-8">
-                    <span id="statusGen" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        PcaGeneralDb0 Ready
-                    </span>
-                    <span id="statusDic" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-sm font-medium shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        PcaAppLaunchDic Ready
-                    </span>
+                <div id="fileStatusContainer" class="flex justify-center space-x-3 mt-4 h-6">
+                    <span id="statusGen" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-0.5 rounded-full text-xs font-medium">PcaGeneralDb0 готов</span>
+                    <span id="statusDic" class="hidden items-center bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-0.5 rounded-full text-xs font-medium">PcaAppLaunchDic готов</span>
                 </div>
             </div>
 
-            <div class="w-full flex justify-between items-center">
-                <div class="flex items-center space-x-4 text-sm text-gray-400">
-                    <span class="flex items-center"><div class="w-3 h-3 bg-red-500 rounded-full mr-2 shadow-[0_0_8px_#ef4444]"></div> Cheats</span>
-                    <span class="flex items-center"><div class="w-3 h-3 bg-amber-500 rounded-full mr-2 shadow-[0_0_8px_#f59e0b]"></div> High Entropy</span>
-                    <span class="flex items-center"><div class="w-3 h-3 bg-zinc-600 border border-red-500 rounded-full mr-2"></div> &lt; 90 Days</span>
-                </div>
-                <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-400 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-[0_0_15px_rgba(37,99,235,0.4)] disabled:shadow-none z-10" disabled>
-                    Waiting for files...
+            <div class="w-full flex justify-end">
+                <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg text-sm" disabled>
+                    Ожидание файлов...
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Таблица результатов -->
+    <!-- Панель с вкладками и таблицей -->
     <div id="resultsPanel" class="w-full max-w-6xl glass-panel rounded-2xl overflow-hidden hidden shadow-2xl">
-        <div class="bg-[#1f1f22] p-4 border-b border-gray-800 flex justify-between items-center">
-            <h2 class="font-bold text-white">Analysis Results</h2>
-            <span id="statsLabel" class="text-sm text-gray-400"></span>
+        <!-- Навигация по вкладкам -->
+        <div class="bg-[#1f1f22] p-4 border-b border-gray-800 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex space-x-2 bg-black/40 p-1 rounded-xl border border-zinc-800">
+                <button onclick="switchTab('threats')" id="tabThreats" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow">
+                    Угрозы и подозрительные (<span id="threatsCount">0</span>)
+                </button>
+                <button onclick="switchTab('recent')" id="tabRecent" class="px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">
+                    За последние 24 часа (<span id="recentCount">0</span>)
+                </button>
+                <button onclick="switchTab('all')" id="tabAll" class="px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">
+                    Все запуски (<span id="totalCount">0</span>)
+                </button>
+            </div>
+            <span id="statsLabel" class="text-xs text-gray-400 font-mono"></span>
         </div>
+
         <div class="overflow-x-auto custom-scrollbar max-h-[600px]">
             <table class="w-full text-left border-collapse">
-                <thead class="sticky top-0 bg-[#1f1f22] z-10">
-                    <tr class="border-b border-gray-800 text-xs uppercase tracking-wider text-gray-400">
-                        <th class="p-4 font-semibold w-32">Date</th>
-                        <th class="p-4 font-semibold w-1/4">Filename</th>
-                        <th class="p-4 font-semibold">Full Path</th>
-                        <th class="p-4 font-semibold w-48 text-right">Flags</th>
+                <thead class="sticky top-0 bg-[#19191c] z-10">
+                    <tr class="border-b border-gray-800 text-[11px] uppercase tracking-wider text-gray-400">
+                        <th class="p-3.5 font-semibold w-40">Дата и время</th>
+                        <th class="p-3.5 font-semibold w-24">Риск</th>
+                        <th class="p-3.5 font-semibold w-1/4">Имя файла</th>
+                        <th class="p-3.5 font-semibold">Полный путь</th>
+                        <th class="p-3.5 font-semibold w-48 text-right">Факторы</th>
                     </tr>
                 </thead>
-                <tbody id="resultsBody" class="text-sm divide-y divide-gray-800">
-                    <!-- JS Rows -->
+                <tbody id="resultsBody" class="text-xs divide-y divide-gray-800/60 font-mono">
+                    <!-- Заполняется JS -->
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // --- База читов (в одной строке) ---
-        const CHEAT_STRING = "exloader|com.swiftsoft|xone|interium|skinchanger|extrimhack|nix|nixware|memesense|mvploader|sharkhack|exhack|neverkernel|vredux|mason|predator|aquila|luno|fecurity|cartel|aimstar|tkazer|naim|pellix|pussycat|axios|onemacro|softhub|proext|sapphire|interwebz|plague|vapehook|smurfwrecker|iniuria|yeahnot|legendware|hauntedproject|phoenixhack|onebyteradar|reborn|onebyte|osiris|ev0lve|ghostware|dexterion|basicmultihack|pudra|icheat|sneakys|krazyhack|muhprime|drcheats|rootcheat|aeonix|zedt.pw|devcore|legifard|katebot|imxnoobx|w1nner|ekknod|neoxahack|warware|weave|aimmy|paradise|xenon|easysp|en1gma|injector|.ahk|macros|bhop|bunnyhop|espd2x|avira|pphud|primordial|nonagon|legit|hvh|aimbot|s1mple|semirage|cheat|cs2.glow|invision|undetek|spurdo|webradar|valthrun|skeet|gamesense|fatality|onetap|neverlose|aimware|pandora|millionware|zapped|spirthack|midnight|eternity|weebware|otcv2|otcv3|otcv4|ezfrags|projectinfinity|klorik|rawetrip|airhook|clarity|novoline|fuzion|mutiny|rifk7|nemesis|zeus|vanity|redtrust|pcileech|dma_bypass|faceit_bypass|vanguard_bypass|kernel_cheat|loader.exe|ec-cs2|fantasy.cat|fantasycat|nightfall|anyx|anyx.gg|visioncloud|distort|distort.wtf|compkiller|kernaim|insanitycheats|yuisemi|incident|star.cs2|quint|word.exe|zelesis|uwuware|lootline|essentials|neverloose|nl|gs|aw|ot|dma|kmbox|fuser|radarhack|wallhack|esp|triggerbot|aimassist|rcs|chams|glowesp|x-ray|deflect|ratpoison|charlatano|penguin|aimtux|otc|supremacy|indigo|gladiatorcheatz|ayyware|stickrpg|getze.us|freeqn|bighack|victoria|forsaken|kqly|hook|bypass|dumper|offset|memory|lumihook|weave.su|luckycharms|dopamine|aimstep|paste|pasting|ezcheats|unknowncheats|mpgh|csgohacks|guidedhacking|ezfrag";
-        const CHEAT_KEYWORDS = CHEAT_STRING.split('|');
+        // --- 1. ТОЧНЫЙ СПИСОК ЧИТОВ (Только явные маркеры без ложных срабатываний) ---
+        const CHEAT_KEYWORDS = [
+            "exloader", "xone", "interium", "skinchanger", "extrimhack", "nixware", "memesense", 
+            "mvploader", "sharkhack", "neverkernel", "vredux", "fecurity", "aimstar", "tkazer", 
+            "iniuria", "yeahnot", "legendware", "osiris", "ev0lve", "drcheats", "aeonix", "aimmy", 
+            "en1gma", "pphud", "primordial", "skeet", "gamesense", "fatality", "onetap", "neverlose", 
+            "aimware", "pandora", "spirthack", "midnight", "ezfrags", "rawetrip", "novoline", 
+            "pcileech", "kmbox", "wallhack", "triggerbot", "aimassist", "glowesp", "freeqn", "dopamine"
+        ];
 
-        // Глобальные переменные для хранения файлов
+        // --- 2. БЕЛЫЙ СПИСОК (Исключает ложные срабатывания) ---
+        const WHITELIST_DIRS = [
+            "c:\\windows\\system32",
+            "c:\\windows\\syswow64",
+            "c:\\windows\\microsoft.net",
+            "c:\\program files\\steam",
+            "c:\\program files (x86)\\steam",
+            "c:\\program files\\epic games",
+            "c:\\program files\\riot vanguard"
+        ];
+
+        const WHITELIST_EXES = [
+            "explorer.exe", "svchost.exe", "cmd.exe", "powershell.exe", "msedge.exe",
+            "chrome.exe", "firefox.exe", "discord.exe", "steam.exe", "epicgameslauncher.exe",
+            "spotify.exe", "telegram.exe", "vlc.exe", "code.exe", "taskmgr.exe"
+        ];
+
+        let parsedItems = [];
+        let currentTab = 'threats';
         let fileGeneral = null;
         let fileDic = null;
 
-        // Копирование пути
         function copyPath() {
             navigator.clipboard.writeText("C:\\Windows\\appcompat\\pca");
             const toast = document.getElementById('copyToast');
@@ -127,7 +148,6 @@
             setTimeout(() => toast.classList.add('opacity-0'), 2000);
         }
 
-        // Автоопределение файлов по именам
         const fileInput = document.getElementById('fileInput');
         const dropzone = document.getElementById('dropzone');
         const submitBtn = document.getElementById('submitBtn');
@@ -135,8 +155,6 @@
         const statusDic = document.getElementById('statusDic');
 
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-
-        // Визуальные эффекты при перетаскивании
         fileInput.addEventListener('dragenter', () => dropzone.classList.add('dropzone-hover'));
         fileInput.addEventListener('dragleave', () => dropzone.classList.remove('dropzone-hover'));
         fileInput.addEventListener('drop', () => dropzone.classList.remove('dropzone-hover'));
@@ -154,25 +172,20 @@
                     statusDic.classList.add('flex');
                 }
             }
-            
-            // Если загружен хотя бы один файл, разблокируем кнопку
             if (fileGeneral || fileDic) {
                 submitBtn.disabled = false;
-                submitBtn.innerText = 'Analyze Vectors';
+                submitBtn.innerText = 'Анализировать логи';
             }
         }
 
-        // Расчет Энтропии Шеннона
+        // Расчет энтропии (только для нестандартных имен > 6 символов, не UUID)
         function calculateEntropy(filename) {
-            if (!filename) return 0.0;
             const baseName = filename.substring(0, filename.lastIndexOf('.')) || filename;
-            if (baseName.length < 5) return 0.0; 
+            // Игнорируем GUID формата {XXXXXXXX-XXXX-...}
+            if (baseName.length < 6 || /^[0-9a-fA-F-]{32,}$/.test(baseName)) return 0;
 
             const counts = {};
-            for (let i = 0; i < baseName.length; i++) {
-                const char = baseName[i];
-                counts[char] = (counts[char] || 0) + 1;
-            }
+            for (let char of baseName) counts[char] = (counts[char] || 0) + 1;
 
             let entropy = 0;
             for (let char in counts) {
@@ -182,42 +195,86 @@
             return entropy;
         }
 
-        // Умное чтение файла (UTF-16LE / UTF-8)
         async function readLogFile(file) {
             const buffer = await file.arrayBuffer();
             const bytes = new Uint8Array(buffer);
-            let isUTF16 = false;
-            
-            if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) isUTF16 = true;
-            else {
-                for (let i = 0; i < Math.min(bytes.length, 200); i++) {
+            let isUTF16 = (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE);
+            if (!isUTF16) {
+                for (let i = 0; i < Math.min(bytes.length, 100); i++) {
                     if (bytes[i] === 0) { isUTF16 = true; break; }
                 }
             }
-
             const decoder = new TextDecoder(isUTF16 ? 'utf-16le' : 'utf-8');
-            const text = decoder.decode(buffer);
-            return text.split(/\r?\n/).filter(line => line.trim().length > 0);
+            return decoder.decode(buffer).split(/\r?\n/).filter(line => line.trim().length > 0);
         }
 
-        // Парсинг одной строки
-        function processLine(line, isDic) {
-            const limitDate = new Date();
-            limitDate.setDate(limitDate.getDate() - 90); 
-            
-            let dateStr = "";
+        // Расчет риска (0 - 100%)
+        function evaluateRisk(filePath, fileName, entropy) {
+            const lowerPath = filePath.toLowerCase();
+            const lowerName = fileName.toLowerCase();
+
+            // 1. Проверка белого списка
+            if (WHITELIST_EXES.includes(lowerName)) return { score: 0, factors: [] };
+            for (let dir of WHITELIST_DIRS) {
+                if (lowerPath.startsWith(dir)) return { score: 0, factors: [] };
+            }
+
+            let score = 0;
+            let factors = [];
+
+            // 2. Сигнатуры читов (Самый большой вес)
+            for (let cheat of CHEAT_KEYWORDS) {
+                const reg = new RegExp(`(^|[ _.-])${cheat}([ _.-]|$)`, 'i');
+                if (reg.test(lowerName) || lowerPath.includes('\\' + cheat)) {
+                    score += 85;
+                    factors.push(`Чит: ${cheat}`);
+                    break;
+                }
+            }
+
+            // 3. Запуск из опасных папок
+            if (lowerPath.includes('\\appdata\\local\\temp')) {
+                score += 25;
+                factors.push('Запуск из Temp');
+            } else if (lowerPath.includes('\\downloads\\')) {
+                score += 10;
+                factors.push('Папка Downloads');
+            }
+
+            // 4. Подозрительная энтропия (рандомизированное имя)
+            if (entropy > 3.85) {
+                score += 35;
+                factors.push(`Высокая энтропия (${entropy.toFixed(2)})`);
+            }
+
+            return {
+                score: Math.min(100, score),
+                factors: factors
+            };
+        }
+
+        function parseLine(line, isDic) {
+            let fullDate = null;
+            let dateStr = "Неизвестно";
             let filePath = "";
-            
+
             if (isDic) {
                 const parts = line.split('|');
                 filePath = parts[0].trim();
-                const dMatch = line.match(/(\d{4}[-/]\d{2}[-/]\d{2})/);
-                if (dMatch) dateStr = dMatch[1].replace(/\//g, '-');
+                const dMatch = line.match(/(\d{4}[-/]\d{2}[-/]\d{2}\s+\d{2}:\d{2}:\d{2})/);
+                if (dMatch) {
+                    dateStr = dMatch[1];
+                    fullDate = new Date(dateStr.replace(/\//g, '-'));
+                }
             } else {
                 const parts = line.split('|').map(p => p.trim());
                 for (let part of parts) {
-                    if (!dateStr && /(\d{4}[-/]\d{2}[-/]\d{2})/.test(part)) {
-                        dateStr = part.match(/(\d{4}[-/]\d{2}[-/]\d{2})/)[1].replace(/\//g, '-');
+                    if (!fullDate && /(\d{4}[-/]\d{2}[-/]\d{2})/.test(part)) {
+                        const dMatch = part.match(/(\d{4}[-/]\d{2}[-/]\d{2}(\s+\d{2}:\d{2}:\d{2})?)/);
+                        if (dMatch) {
+                            dateStr = dMatch[1];
+                            fullDate = new Date(dateStr.replace(/\//g, '-'));
+                        }
                     } else if (!filePath && (part.includes(':\\') || part.includes('/'))) {
                         filePath = part;
                     }
@@ -226,131 +283,132 @@
 
             if (!filePath) return null;
 
-            const name = filePath.split('\\').pop().split('/').pop(); 
-            
-            let isRecent = false;
-            if (dateStr) {
-                const rowDate = new Date(dateStr);
-                if (rowDate >= limitDate) isRecent = true;
-            }
+            const fileName = filePath.split('\\').pop().split('/').pop();
+            const entropy = calculateEntropy(fileName);
+            const risk = evaluateRisk(filePath, fileName, entropy);
 
-            const lowerPath = filePath.toLowerCase();
-            const foundCheats = CHEAT_KEYWORDS.filter(c => lowerPath.includes(c));
-            
-            const entropyVal = calculateEntropy(name);
-            const isSuspicious = entropyVal > 3.8;
+            // Проверка за последние 24 часа
+            const now = new Date();
+            const is24h = fullDate ? ((now - fullDate) <= 24 * 60 * 60 * 1000 && (now - fullDate) >= 0) : false;
 
             return {
-                date: dateStr || "Unknown",
-                name: name,
+                timestamp: fullDate ? fullDate.getTime() : 0,
+                dateDisplay: dateStr,
+                name: fileName,
                 path: filePath,
-                is_recent: isRecent,
-                found_cheats: foundCheats,
-                is_suspicious: isSuspicious,
-                entropy: entropyVal.toFixed(2)
+                is24h: is24h,
+                riskScore: risk.score,
+                factors: risk.factors
             };
         }
 
-        // Основной обработчик
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!fileGeneral && !fileDic) return;
-
-            submitBtn.innerText = 'Scanning...';
-            submitBtn.classList.add('animate-pulse');
+            submitBtn.innerText = 'Анализ...';
             submitBtn.disabled = true;
 
             try {
-                let allResults = [];
-
+                let records = [];
                 if (fileGeneral) {
                     const lines = await readLogFile(fileGeneral);
-                    lines.forEach(line => {
-                        const parsed = processLine(line, false);
-                        if (parsed) allResults.push(parsed);
-                    });
+                    lines.forEach(l => { const r = parseLine(l, false); if (r) records.push(r); });
                 }
-
                 if (fileDic) {
                     const lines = await readLogFile(fileDic);
-                    lines.forEach(line => {
-                        const parsed = processLine(line, true);
-                        if (parsed) allResults.push(parsed);
-                    });
+                    lines.forEach(l => { const r = parseLine(l, true); if (r) records.push(r); });
                 }
 
-                if (allResults.length === 0) {
-                    alert("No data found in selected files.");
-                    return;
-                }
-
-                // Удаляем дубликаты
-                const uniqueMap = new Map();
-                allResults.forEach(item => uniqueMap.set(item.path, item));
-                let uniqueResults = Array.from(uniqueMap.values());
-
-                // Статистика
-                let cheatCount = 0;
-                let suspiciousCount = 0;
-
-                // Сортировка
-                uniqueResults.sort((a, b) => {
-                    if (a.found_cheats.length > 0 && b.found_cheats.length === 0) return -1;
-                    if (a.found_cheats.length === 0 && b.found_cheats.length > 0) return 1;
-                    if (a.is_suspicious && !b.is_suspicious) return -1;
-                    if (!a.is_suspicious && b.is_suspicious) return 1;
-                    if (a.is_recent && !b.is_recent) return -1;
-                    if (!a.is_recent && b.is_recent) return 1;
-                    return 0;
+                // Дедупликация (оставляем самый свежий запуск для каждого пути)
+                const map = new Map();
+                records.forEach(r => {
+                    if (!map.has(r.path) || map.get(r.path).timestamp < r.timestamp) {
+                        map.set(r.path, r);
+                    }
                 });
 
-                // Рендер
-                const tbody = document.getElementById('resultsBody');
-                tbody.innerHTML = '';
+                parsedItems = Array.from(map.values());
 
-                uniqueResults.forEach(item => {
-                    if (item.found_cheats.length > 0) cheatCount++;
-                    if (item.is_suspicious) suspiciousCount++;
+                // Сортировка: Сначала свежие и с высоким риском
+                parsedItems.sort((a, b) => b.riskScore - a.riskScore || b.timestamp - a.timestamp);
 
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-[#202024] transition-colors';
-                    
-                    let rowBorder = item.is_recent ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-transparent';
-                    
-                    let badges = '';
-                    if (item.found_cheats.length > 0) {
-                        badges += `<span class="inline-block bg-red-500/20 text-red-400 border border-red-500/50 px-2 py-1 rounded text-xs font-bold mb-1 shadow-[0_0_10px_rgba(239,68,68,0.2)]">CHEAT: ${item.found_cheats[0].toUpperCase()}</span><br>`;
-                        tr.classList.add('bg-red-950/20');
-                    }
-                    if (item.is_suspicious) {
-                        badges += `<span class="inline-block bg-amber-500/20 text-amber-400 border border-amber-500/50 px-2 py-1 rounded text-xs font-bold mb-1 shadow-[0_0_10px_rgba(245,158,11,0.2)]">ENTROPY: ${item.entropy}</span>`;
-                        if (item.found_cheats.length === 0) tr.classList.add('bg-amber-950/10');
-                    }
+                // Подсчет счетчиков
+                const threatCount = parsedItems.filter(i => i.riskScore >= 40).length;
+                const recentCount = parsedItems.filter(i => i.is24h).length;
 
-                    tr.innerHTML = `
-                        <td class="p-4 whitespace-nowrap text-gray-400 ${rowBorder}">
-                            ${item.date} 
-                            ${item.is_recent ? '<span class="text-red-500 ml-1 font-bold text-xl leading-none align-middle" title="< 90 Days">•</span>' : ''}
-                        </td>
-                        <td class="p-4 font-mono text-gray-200 break-all">${item.name}</td>
-                        <td class="p-4 text-gray-500 text-xs break-all">${item.path}</td>
-                        <td class="p-4 text-right align-top">${badges}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                document.getElementById('threatsCount').innerText = threatCount;
+                document.getElementById('recentCount').innerText = recentCount;
+                document.getElementById('totalCount').innerText = parsedItems.length;
 
-                document.getElementById('statsLabel').innerText = `Total scanned: ${uniqueResults.length} | Cheats: ${cheatCount} | Suspicious: ${suspiciousCount}`;
                 document.getElementById('resultsPanel').classList.remove('hidden');
+                renderCurrentTab();
 
             } catch (err) {
                 console.error(err);
-                alert('Error analyzing files. Make sure they are valid Windows PCA Logs.');
+                alert("Ошибка чтения логов PCA!");
             } finally {
-                submitBtn.innerText = 'Analyze Vectors';
-                submitBtn.classList.remove('animate-pulse');
+                submitBtn.innerText = 'Анализ завершен';
                 submitBtn.disabled = false;
             }
         });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['tabThreats', 'tabRecent', 'tabAll'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all';
+            });
+
+            if (tab === 'threats') document.getElementById('tabThreats').className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow';
+            if (tab === 'recent') document.getElementById('tabRecent').className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow';
+            if (tab === 'all') document.getElementById('tabAll').className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow';
+
+            renderCurrentTab();
+        }
+
+        function renderCurrentTab() {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            let filtered = [];
+            if (currentTab === 'threats') {
+                filtered = parsedItems.filter(i => i.riskScore >= 35);
+            } else if (currentTab === 'recent') {
+                filtered = parsedItems.filter(i => i.is24h);
+                filtered.sort((a, b) => b.timestamp - a.timestamp);
+            } else {
+                filtered = parsedItems;
+            }
+
+            document.getElementById('statsLabel').innerText = `Показано записей: ${filtered.length}`;
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-zinc-800/40 transition-colors';
+
+                // Цветовая шкала риска
+                let riskBadge = '';
+                if (item.riskScore >= 70) {
+                    riskBadge = `<span class="bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded font-bold">${item.riskScore}%</span>`;
+                } else if (item.riskScore >= 35) {
+                    riskBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded font-bold">${item.riskScore}%</span>`;
+                } else {
+                    riskBadge = `<span class="bg-zinc-800 text-gray-400 px-2 py-0.5 rounded">${item.riskScore}%</span>`;
+                }
+
+                let factorsHtml = item.factors.map(f => 
+                    `<span class="inline-block bg-zinc-800 text-zinc-300 border border-zinc-700 px-1.5 py-0.5 rounded text-[10px] ml-1">${f}</span>`
+                ).join('');
+
+                tr.innerHTML = `
+                    <td class="p-3.5 whitespace-nowrap text-gray-400">${item.dateDisplay}</td>
+                    <td class="p-3.5 whitespace-nowrap">${riskBadge}</td>
+                    <td class="p-3.5 text-gray-200 font-bold break-all">${item.name}</td>
+                    <td class="p-3.5 text-gray-500 text-[11px] break-all max-w-md">${item.path}</td>
+                    <td class="p-3.5 text-right whitespace-nowrap">${factorsHtml || '<span class="text-zinc-600">-</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
     </script>
 </body>
 </html>
